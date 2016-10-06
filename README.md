@@ -1,1 +1,1 @@
-Small Express boiler plate with grunt integrated for code styling and linting and mongodb connections. MVC format express boiler plate. 
+Small Express boiler plate with [sequelize ORM](http://docs.sequelizejs.com/en/v3/).
