@@ -1,7 +1,9 @@
 var winston = require('winston');
 var logger = new(winston.Logger)({
   transports: [
-    new(winston.transports.Console)(),
+    new(winston.transports.Console)({
+      colorize: true
+    }),
     new(winston.transports.File)({
       name: 'info-file',
       filename: './logs/filelog-info.log',
@@ -12,9 +14,7 @@ var logger = new(winston.Logger)({
       filename: './logs/filelog-error.log',
       level: 'error'
     })
-  ],
-  msg: 'HTTP {{req.method}} {{req.url}}',
-  colorize: true
+  ]
 });
 
 module.exports = logger;

@@ -1,8 +1,12 @@
 /* globals console */
-var express = require('express');
-var bodyParser = require('body-parser');
-var app = express();
+"use strict"
+const express = require('express');
+const bodyParser = require('body-parser');
+const parseurl = require('parseurl');
+const session = require('express-session');
+const app = express();
 app.set('view engine', 'pug');
+const Sequelize = require('sequelize');
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({
@@ -13,81 +17,45 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 global.exp = express;
-var connections = require('./config/connections.js');
-global.exp.connections = connections;
+const connections = require('./config/connections.js');
 
-var mongoConnection = connections.mongoose;
-var mongoConnectionString = 'mongodb://' + mongoConnection.username + ':' + mongoConnection.password + '@' + mongoConnection.url + ':' + mongoConnection.port + '/' + mongoConnection.db;
-console.log(mongoConnectionString);
-var mongoose = require('mongoose');
-mongoose.connect(mongoConnectionString);
-global.exp.mongoose = mongoose;
-var db = mongoose.connection;
+const mysqlconnection = connections.mysql;
+const sequelize = new Sequelize(mysqlconnection.db, mysqlconnection.username, mysqlconnection.password, {
+  host: mysqlconnection.host,
+  dialect: 'mysql',
+  pool: {
+    max: 5,
+    min: 0,
+    idle: 10000
+  }
+});
 
-db.on('error', console.error.bind(console, 'connection error:'));
+global.exp.sequelize = sequelize;
 
-require('./api/models/User.js');
-require('./api/models/Birds.js');
+global.exp.models = {};
+global.exp.associations = {};
 
-var user = require('./api/controller/userController.js');
+require('./api/modules/address/Address.js');
+require('./api/modules/users/User.js');
+require('./api/modules/projects/Project.js');
+require('./api/modules/photos/Photos.js');
 
-var birds = require('./api/controller/birdsController.js');
+let users = require('./api/modules/users/UserController.js');
+let projects = require('./api/modules/projects/ProjectController.js');
 
-app.use('/birds', birds);
+app.use('/users', users);
+app.use('/projects', projects);
 
 app.get('/', function(req, res) {
   res.render('index', {
     title: 'Users☺',
-    message: 'This is basic user CRUD!☺'
+    message: 'This is basic user CRUD using sequelize!☺'
   });
 });
 
-app.post('/user', function(req, res) {
-  user.create(req).then(function(response) {
-    res.send(response);
-  }).fail(function(err) {
-    res.status = 500;
-    res.send(err);
-  });
-});
-
-app.get('/users/byname/:name', function(req, res) {
-  user.getByName(req).then(function(response) {
-    res.send(response);
-  }).fail(function(err) {
-    res.status = 500;
-    res.send(err);
-  });
-});
-
-app.get('/users/:userid', function(req, res) {
-  user.getById(req).then(function(response) {
-    res.send(response);
-  }).fail(function(err) {
-    res.status = 500;
-    res.send(err);
-  });
-});
-
-app.post('/users/:userid', function(req, res) {
-  user.update(req).then(function(response) {
-    res.send(response);
-  }).fail(function(err) {
-    res.status = 500;
-    res.send(err);
-  });
-});
-
-app.get('/users', function(req, res) {
-  user.getAll(req).then(function(response) {
-    res.send(response);
-  }).fail(function(err) {
-    res.status = 500;
-    res.send(err);
-  });
-});
-
-var server = app.listen(3000, function() {
-  var port = server.address().port;
+const server = app.listen(3001, function() {
+  let port = server.address().port;
   console.log('Example app listening on port %s!', port);
 });
+
+module.exports = server;
